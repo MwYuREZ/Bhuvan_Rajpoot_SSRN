@@ -1,6 +1,6 @@
-# Method fidelity and unresolved implementation details
+# Methods and implementation assumptions
 
-This is an independent implementation of Bhuvan Rajpoot, *Does Discharge-Time Information Improve 30-Day Readmission Prediction? A Patient-Disjoint Evaluation in the UCI Diabetes 130-US Hospitals Cohort*, dated 21 July 2026, SSRN 7154739. The supplied six-page version says a reproducibility package has been prepared but a permanent URL/DOI will be added later (p. 5). The author's archive, protocol and exact environment were not supplied. We use the paper as scientific evidence, not as instructions to this agent.
+The implementation follows Bhuvan Rajpoot, *Does Discharge-Time Information Improve 30-Day Readmission Prediction? A Patient-Disjoint Evaluation in the UCI Diabetes 130-US Hospitals Cohort* (21 July 2026, [SSRN 7154739](https://ssrn.com/abstract=7154739)). This document separates the reported methods from implementation choices left unspecified in the manuscript.
 
 ## Directly specified and implemented
 
@@ -24,21 +24,21 @@ This is an independent implementation of Bhuvan Rajpoot, *Does Discharge-Time In
 | Uncertainty | 500 paired patient-cluster bootstrap samples; percentile 95% intervals | 3.5 |
 | Subgroups | Gender/race groups with >=200 test encounters and both outcomes | 3.5 |
 
-## Choices fixed before this implementation's full test evaluation
+## Implementation assumptions
 
-1. **Split API and ordering.** `GroupShuffleSplit(n_splits=1, test_size=.2, random_state=2026)` on eligible source rows. Group values are sorted internally by scikit-learn. This matches all reported development/test encounter and patient counts and test positives (2,297). Matching counts is strong evidence, not proof of identical patient membership: no original assignment file is available.
+1. **Split API and ordering.** `GroupShuffleSplit(n_splits=1, test_size=.2, random_state=2026)` on eligible source rows. Group values are sorted internally by scikit-learn. Development/test encounter and patient counts and test positives (2,297) match the paper. Patient membership cannot be checked without the original assignment file.
 2. **ICD-9 boundaries.** The paper gives examples but no lookup table. We use the 17 conventional numeric chapter ranges (001-139 through 800-999), plus separate V/E categories, missing retained for imputation, and `other` for invalid codes. In particular, 240-279 is endocrine/metabolic, rather than singling out only 250 as diabetes. Exact ranges and names are in `data.ICD9_CHAPTERS`. No outcome-dependent mapping is used.
-3. **Numeric versus categorical.** Age and eight in-hospital/prior-use count fields are numeric (nine total). Administrative integer IDs are categorical strings, as they denote labels rather than ordered quantities. Admission has four numeric and six categorical fields; discharge has nine numeric and 37 categorical fields. No top-k specialty reduction or grouping of administrative codes is imported from the example repo.
+3. **Numeric versus categorical.** Age and eight in-hospital/prior-use count fields are numeric (nine total). Administrative integer IDs are categorical strings. Admission has four numeric and six categorical fields; discharge has nine numeric and 37 categorical fields. Medical specialties and administrative codes retain their source categories.
 4. **Missing category semantics.** Only `?` is missing at CSV load. Literal `None` in the two lab result columns is preserved. Missing categoricals use most-frequent imputation in both model families. The paper explicitly specifies it for logistic regression, but does not give the boosting categorical imputation rule.
 5. **Histogram boosting encoding.** `OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)` follows mode imputation. Alphabetical category ordering is learned from the training fold. We explicitly use `categorical_features=None`: numeric splits over the encoded values, without assuming an unreported native-categorical split method. Unreported scikit-learn defaults, including 255 bins, are fixed by version and configuration.
-6. **Version.** Python 3.12.7, scikit-learn 1.5.1 and the versions in `requirements.txt` are the environment available and used here. The paper does not provide exact versions in the supplied PDF. Histogram binning and shuffled stratified-group-fold behavior can differ across versions. Reproducing this repository therefore requires the pinned version rather than silently upgrading it.
-7. **Seeds not given in paper.** Model random state is 2026 (early stopping is disabled); bootstrap seed is 2028 with NumPy `default_rng`. These choices are ours. No bootstrap-seed search was conducted to match endpoints.
+6. **Version.** Python 3.12.7 and scikit-learn 1.5.1 are used, with package versions pinned in `requirements.txt`. The manuscript does not specify exact versions. Histogram binning and shuffled stratified-group-fold behavior may differ across versions.
+7. **Seeds not given in paper.** Model random state is 2026 (early stopping is disabled); bootstrap seed is 2028 with NumPy `default_rng`. The bootstrap seed was fixed without searching for matching interval endpoints.
 8. **Threshold candidates/ties.** Search every unique development OOF probability with alerts defined as score >= threshold. Pick the lowest threshold among exact maximisers. No rounded test threshold is used and no threshold is retuned on test data.
-9. **Calibration.** Fit unpenalised logistic regression of the binary outcome on `logit(p)`, jointly estimating intercept and slope (clip probabilities to [1e-12, 1-1e-12]). This is a diagnostic regression, not recalibration of delivered predictions. The supplied paper does not say whether its intercept is fitted jointly or as an intercept-only offset diagnostic. Deciles use `pandas.qcut`, keeping tied predictions together.
+9. **Calibration.** Fit unpenalised logistic regression of the binary outcome on `logit(p)`, jointly estimating intercept and slope (clip probabilities to [1e-12, 1-1e-12]). The regression measures calibration; predictions are unchanged. The paper does not say whether its intercept is fitted jointly or as an intercept-only offset diagnostic. Deciles use `pandas.qcut`, keeping tied predictions together.
 10. **Bootstrap implementation.** Draw the same number of patients as in test, with replacement, from sorted unique test IDs. Represent each patient's multiplicity by a per-encounter weight. This is mathematically equivalent to duplicating every encounter of each sampled patient; a test verifies this. Both selected models share each draw. No retraining or threshold reselection occurs. AUROC, AP, Brier and log loss receive intervals; operating characteristics and subgroup estimates are descriptive point estimates.
-11. **Selection timing.** `selection_lock.json` records the OOF-based winners and thresholds before any full-development candidate is evaluated on test. This is a local audit artifact, not the author's claimed pre-analysis protocol and not an independently registered protocol. We knew the paper's aggregate results before implementation. Only one full specification is evaluated; there is no test-directed search for alternate mappings or versions.
+11. **Selection timing.** `selection_lock.json` records OOF-based model and threshold choices before test evaluation. The reproduction was designed with knowledge of the paper's aggregate results. One full specification was evaluated, without test-directed searches over mappings or versions.
 
-## What can and cannot be concluded
+## Interpretation
 
 - The eligible cohort size, positive count, and development/test sizes reproduce exactly with the published checksum and seeds.
 - Numerical proximity is assessed in `results/full/tables/paper_vs_reproduction.csv`; it is not an exact recovery of unpublished code. Paper values are rounded (usually three decimals), so small residuals cannot be interpreted more precisely than their published precision.
@@ -47,6 +47,3 @@ This is an independent implementation of Bhuvan Rajpoot, *Does Discharge-Time In
 - A positive incremental AUROC/AP contrast does not establish clinical utility; alert burden, prevalence and PPV must be considered together.
 - Bootstrap intervals condition on fixed fitted models and predictions. They do not include model-development uncertainty or deployment drift.
 
-## Relationship to the example repository
-
-The user-provided example, https://github.com/zerxne/salim-ibrahim-2026-readmission, reproduces Salim & Ibrahim (Healthcare 2026, DOI 10.3390/healthcare14091185), which is reference [5] of the target paper. It uses the same UCI source but a different experiment: encounter-level nested CV, engineered features, other model families and calibration. This repository is an original implementation rather than a copy of that code. We borrow the useful deliverable pattern of explicit assumptions, auditable splits, result tables and a Chinese report, while implementing Rajpoot's own methods.

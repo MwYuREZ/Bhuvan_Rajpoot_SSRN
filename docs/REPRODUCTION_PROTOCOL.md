@@ -1,8 +1,8 @@
-# Independent reproduction specification
+# Reproduction protocol
 
-This document describes the implementation frozen for the initial full run. It is not a reconstruction of the author's unavailable protocol. All published aggregate results were already visible to the implementer.
+This protocol follows the methods in Rajpoot (2026), SSRN 7154739. Implementation assumptions are documented separately. The paper's aggregate results were known when this reproduction was designed.
 
-1. Verify the exact UCI CSV checksum from the supplied PDF.
+1. Verify the UCI CSV against the checksum published in the paper.
 2. Apply only the reported death/hospice and invalid-gender exclusions.
 3. Convert age intervals and broad ICD-9 families deterministically without labels.
 4. Keep all 10 admission fields and all 46 eligible discharge fields.

@@ -1,6 +1,6 @@
 # Data provenance
 
-The two studies use **Diabetes 130-US Hospitals for Years 1999-2008**, UCI dataset 296.
+Source: **Diabetes 130-US Hospitals for Years 1999-2008**, UCI dataset 296.
 
 - Official landing page: https://archive.ics.uci.edu/dataset/296/diabetes-130-us-hospitals-for-years-1999-2008
 - Download URL: https://archive.ics.uci.edu/static/public/296/diabetes+130-us+hospitals+for+years+1999-2008.zip
@@ -9,7 +9,7 @@ The two studies use **Diabetes 130-US Hospitals for Years 1999-2008**, UCI datas
 - Required `diabetic_data.csv` SHA-256: `0689e7ec031237dc63031b938805c48377748761a3b26acab621567afa24df97`
 - Original CSV: 101,766 encounters, 50 columns including outcome and identifiers.
 
-Run `python scripts/download_data.py`. The download routine checks the CSV checksum and writes the official files to `data/raw/`; the main runner downloads automatically if needed. Any modified mirror fails verification. CSV files are intentionally excluded from Git, but remain in the delivered local folder.
+Run `python scripts/download_data.py` to download and verify the files in `data/raw/`. The main runner also downloads them if needed. Raw CSV files are excluded from Git.
 
 Only `?` is parsed as missing. The literal string `None` in `A1Cresult` and `max_glu_serum` means a test was not measured and is retained as a category. Default pandas missing-value parsing would erase that distinction.
 
