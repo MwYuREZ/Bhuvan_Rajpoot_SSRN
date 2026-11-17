@@ -1,0 +1,21 @@
+{
+  "protocol_version": "independent-reproduction-1.0",
+  "split_seed": 2026,
+  "cv_seed": 2027,
+  "model_seed": 2026,
+  "bootstrap_seed": 2028,
+  "test_size": 0.2,
+  "cv_folds": 3,
+  "bootstrap_replicates": 500,
+  "subgroup_min_encounters": 200,
+  "logistic": {"C": 1.0, "solver": "lbfgs", "max_iter": 1000, "tol": 0.0001},
+  "hgb": {"max_iter": 200, "learning_rate": 0.05, "max_leaf_nodes": 31, "min_samples_leaf": 30, "l2_regularization": 1.0, "early_stopping": false, "max_bins": 255},
+  "diagnosis_mapping": "icd9_chapters",
+  "categorical_imputation": "most_frequent",
+  "ordinal_unknown_value": -1,
+  "native_categorical_splits": false,
+  "threshold_rule": "all_unique_oof_scores_greater_equal_lowest_threshold_on_tie",
+  "calibration": "joint_unpenalized_intercept_and_slope_on_logit",
+  "missing_values": ["?"],
+  "notes": "Unreported implementation choices are explained in ASSUMPTIONS_AND_PAPER_ISSUES.md. No tuning against test results."
+}

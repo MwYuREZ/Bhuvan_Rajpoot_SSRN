@@ -1,0 +1,20 @@
+{
+  "eligible": {
+    "encounters": 99340,
+    "patients": 69987,
+    "positives": 11314,
+    "prevalence": 0.1138916851218039
+  },
+  "development": {
+    "encounters": 79398,
+    "patients": 55989,
+    "positives": 9017,
+    "prevalence": 0.11356709237008489
+  },
+  "test": {
+    "encounters": 19942,
+    "patients": 13998,
+    "positives": 2297,
+    "prevalence": 0.1151840336977234
+  }
+}

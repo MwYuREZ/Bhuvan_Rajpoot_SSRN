@@ -1,0 +1,461 @@
+=== PAGE 1 ===
+Does Discharge-Time Information Improve 30-Day Readmission Prediction?
+A Patient-Disjoint Evaluation in the UCI Diabetes 130-US Hospitals Cohort
+Bhuvan Rajpoot
+Independent Researcher
+21 July 2026
+Abstract
+Background: Readmission models are commonly evalu-
+ated as if all electronic-record fields were simultaneously
+available, although predictions made at admission and
+at discharge answer different operational questions.Ob-
+jective: To quantify the incremental predictive value of
+information available by discharge over a compact set plau-
+sibly available at admission for 30-day readmission among
+inpatient encounters involving diabetes care.Methods:
+A locked analysis used the public UCI Diabetes 130-US
+Hospitals cohort. Death and hospice discharge pathways
+and invalid gender records were excluded, leaving 99,340
+encounters from 69,987 patients. Patients, not encoun-
+ters, defined an 80/20 development/test split. Within
+the development set, three-fold stratified group validation
+compared prespecified L2 logistic regression and histogram
+gradient boosting separately for 10 admission-time and
+46 discharge-time predictors. Preprocessing and threshold
+selection occurred inside development data. Discrimina-
+tion, calibration, and F2 operating characteristics were
+evaluated once in 19,942 encounters from 13,998 unseen
+patients; 95% intervals used 500 patient-cluster bootstrap
+replicates. Results: Logistic regression was selected for
+admission-time data and gradient boosting for discharge-
+time data. Held-out AUROC increased from 0.631 (95%
+CI 0.615–0.646) to 0.677 (0.663–0.689), a paired difference
+of 0.046 (0.036–0.056). Average precision increased from
+0.206 to 0.237, a difference of 0.032 (0.020–0.042); outcome
+prevalence was 11.52%. At the prespecified F2 threshold,
+the discharge-time model achieved sensitivity 0.789 and
+specificity 0.422, alerting on 60.2% of encounters.Con-
+clusions: Encounter-complete information produced a
+statistically clear but modest improvement. Performance
+remained insufficient to justify clinical use without tem-
+poral and external validation. Explicit predictor timing
+and patient-disjoint evaluation should be treated as core
+design choices, not implementation details.
+Keywords: hospital readmission; diabetes; machine
+learning; patient-disjoint validation; predictor availability;
+calibration
+1 Introduction
+Thirty-day readmission is a difficult prognostic target. It
+is shaped not only by diagnoses and treatment but also by
+prior utilisation, discharge planning, social circumstances,
+access to care, and events after discharge. Structured
+electronic health records can support risk estimation, but
+their fields become available at different points in the care
+pathway. A model using length of stay, discharge disposi-
+tion, final diagnoses, and medication changes cannot be
+interpreted as an admission-time model merely because
+those variables share a row in a retrospective table.
+ThepublicDiabetes130-USHospitalsdatasetisawidely
+used benchmark with 101,766 encounters collected from
+130 US hospitals during 1999–2008 [1, 2]. The source
+study examined the association between HbA1c measure-
+ment and readmission [2]; subsequent prediction studies
+have compared random forests, boosting, neural networks,
+and regression [3, 4, 5]. These studies demonstrate the
+benchmark’s difficulty, but a single “full feature” score
+does not answer how much information is gained during
+the encounter or what predictive performance is possible
+earlier.
+This study therefore asks a narrower question: how
+much does information available by discharge add beyond
+a compact admission-time view? Three design choices
+follow from that question. First, predictor sets are defined
+by approximate availability. Second, patients are kept
+disjoint across every split so repeated encounters cannot
+cross development and test partitions. Third, probability
+quality and operational burden are reported alongside
+ranking performance. Reporting follows the principles of
+TRIPOD+AI[6], andrisk-of-biasconcernswereconsidered
+with reference to PROBAST+AI [7].
+2 Related work
+Strack et al. assembled the cohort and analysed nearly
+70,000 encounters with sufficient HbA1c detail, finding
+that measurement patterns were associated with readmis-
+sion [2]. Shang et al. later evaluated 23 predictors with an
+80/20 split and found random forest to be the strongest of
+three classifiers [3]. Emi-Johnson and Nkrumah compared
+logistic regression, random forest, XGBoost, and a neural
+1
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=7154739
+Preprint not peer reviewed
+
+=== PAGE 2 ===
+network on the complete benchmark; XGBoost achieved
+an AUROC of 0.667 [4]. Salim and Ibrahim extended
+evaluation through nested cross-validation, probability
+calibration, bootstrapping, and ensemble models [5].
+These results place the attainable discrimination in con-
+text: readmission is not a near-deterministic outcome
+in these data. The present work does not seek a max-
+imal benchmark score. Its contribution is a controlled
+comparison of two prediction times on exactly the same
+patient-disjoint holdout, with thresholds chosen before test
+evaluation. Precision–recall performance is emphasised
+because the positive class is uncommon [8]; calibration is
+reported because ranking alone does not establish reliable
+risk estimates [9].
+3 Methods
+3.1 Study design, data source, and ethics
+This was a retrospective secondary analysis of de-identified,
+publicly available data. UCI distributes the dataset under
+CC BY 4.0 [1]. No attempt was made to identify indi-
+viduals, and no new human participants were recruited;
+institutional review board review was therefore not sought.
+The analysis protocol (version 1.0) was written before the
+newly seeded test partition was evaluated and is included
+with the source archive.
+The input file was required to match the following SHA-
+256 checksum:
+0689e7ec031237dc63031b938805c4837
+7748761a3b26acab621567afa24df97
+This guards against silent use of a modified mirror.
+3.2 Cohort and outcome
+The unit of analysis was an inpatient encounter. The
+binary outcome was 1 whenreadmitted was <30 and 0
+when it was >30 or NO. The label does not distinguish
+planned from unplanned readmission. Rows with gender
+Unknown/Invalid were removed. Discharge dispositions
+11, 13, 14, 19, 20, and 21 were excluded because the
+accompanying mapping identifies death or hospice path-
+ways, for which ordinary opportunity for readmission is
+not comparable. Question marks were treated as miss-
+ing. weight was excluded because of extreme missingness.
+encounter_id and patient_nbr were never predictors;
+the latter was used only to keep patients disjoint.
+Age intervals were replaced by their midpoints. The
+three diagnosis fields were mapped, without outcome infor-
+mation, to broad ICD-9 families (for example, circulatory,
+respiratory, endocrine/metabolic, and injury/poisoning).
+All other values retained their source meaning.
+3.3 Predictor availability
+The admission-time set contained 10 fields: race, gender,
+age, admission type, admission source, payer code, medical
+specialty, and counts of prior outpatient, emergency, and
+inpatient visits. These represent demographics, admission
+context, and prior utilisation.
+The discharge-time set contained all 46 eligible pre-
+dictors. It added discharge disposition, length of stay,
+diagnoses, laboratory and procedure counts, medication
+counts and states, glucose and HbA1c result categories,
+and treatment-change indicators. “Discharge-time” means
+available by the end of the encounter, not necessarily mea-
+sured at the instant of discharge. Element- level times-
+tamps were unavailable, so timing is an explicit approxi-
+mation from field semantics.
+3.4 Partitioning, preprocessing, and mod-
+els
+A grouped random split assigned 80% of patients to devel-
+opment and 20% to the test partition (random state 2026).
+Model selection used three-fold shuffled StratifiedGroupK-
+Fold within development data (random state 2027). There
+was no patient overlap across any assessment boundary.
+Imputation and encoding were fitted separately in every
+fold, preventing validation information from influencing
+preprocessing.
+Two model families were prespecified for each predictor
+set:
+1. L2-regularised logistic regression (C = 1 .0, LBFGS
+solver, at most 1,000 iterations), using median impu-
+tation and standardisation for numerical fields and
+most-frequent imputation plus one-hot encoding for
+categorical fields.
+2. Histogram gradient boosting (200 iterations, learning
+rate 0.05, 31 leaf nodes, minimum 30 samples per leaf,
+L2 regularisation 1.0, and early stopping disabled),
+using median imputation for numerical fields and
+ordinal encoding with an explicit unknown value for
+categorical fields.
+No synthetic sampling, class weighting, or post-hoc fea-
+ture selection was used. For each availability set, the
+candidate with the highest development out-of-fold aver-
+age precision was selected; lower Brier score broke ties.
+This allows model complexity to differ when warranted
+by development evidence while keeping the feature-timing
+comparison prespecified. Models were implemented in
+scikit-learn [10].
+3.5 Performance and statistical analysis
+The held-out test set was used once after selection. Re-
+ported probability metrics were AUROC, average precision
+(AP), Brier score, log loss, calibration intercept, and cal-
+ibration slope. Calibration curves used equal-frequency
+deciles. Intercept 0 and slope 1 indicate ideal weak cali-
+bration [9].
+2
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=7154739
+Preprint not peer reviewed
+
+=== PAGE 3 ===
+F1- and F2-maximising thresholds were chosen from
+development out-of-fold predictions. F2 was the primary
+operating point, weighting recall more strongly. At each
+threshold, sensitivity, specificity, positive predictive value
+(PPV), negative predictive value (NPV), F1, F2, and alert
+rate were calculated. These are descriptive operating
+scenarios, not recommended clinical cut-offs.
+Uncertainty used 500 nonparametric bootstrap repli-
+cates sampled at patient level, preserving all encounters
+for a sampled patient. The primary contrast was the
+paired discharge-minus-admission difference in AUROC,
+AP, and Brier score on the same resampled patients. Per-
+centile 95% intervals are reported. Performance by gender
+and race was descriptive for groups with at least 200 test
+encounters and both outcome classes; it is not a fairness
+certification.
+4 Results
+4.1 Cohort and partition integrity
+Of 101,766 source encounters, 2,426 were excluded, leav-
+ing 99,340 encounters from 69,987 patients. There were
+11,314 positive encounters (11.39%). The test set con-
+tained 19,942 encounters from 13,998 patients and had
+prevalence 11.52%; no patient appeared in both develop-
+ment and test data (Table 1).
+T able 1: Cohort construction and patient-disjoint partition.
+Partition Encounters Unique patients 30-day readmission, %
+Source file 101,766 – –
+Eligible cohort 99,340 69,987 11.39
+Development 79,398 55,989 11.36
+Held-out test 19,942 13,998 11.52
+4.2 Model selection and held-out perfor-
+mance
+Development AP selected logistic regression for the
+admission-time set (AP 0.194) and gradient boosting for
+the discharge-time set (AP 0.220). Both choices were
+fixed before test evaluation. Held-out results for every
+prespecified candidate are shown in Table 2; the selected
+comparison is visualised in Figures 1–3.
+The discharge-time model improved AUROC by 0.046
+(95%CI0.036–0.056)andAPby0.032(0.020–0.042). Brier
+score decreased by 0.0022 (95% CI -0.0028 to -0.0016 for
+the signed discharge-minus-admission difference), indicat-
+ing a small improvement in probability accuracy. Calibra-
+tion was broadly reasonable: the admission and discharge
+calibration intercepts were -0.173 and 0.103, with slopes
+0.913 and 1.046, respectively.
+4.3 Operating points and subgroup de-
+scription
+At the primary F2 threshold selected in development,
+admission-time prediction reached sensitivity 0.844 and
+specificity 0.264, but would flag 74.8% of test encounters.
+The discharge-time model reached sensitivity 0.789 and
+specificity 0.422 while flagging 60.2% (Table 3). The
+reduction in alert burden illustrates why a discrimination
+gain can matter operationally, but a 60.2% alert rate
+remains too broad to imply readiness for deployment.
+T able 3: Held-out operating characteristics at development-
+selected thresholds.
+Features Criterion Threshold Sens. Spec. PPV F2 Alert, %
+Admission F1 0.120 0.425 0.766 0.192 0.342 25.6
+Admission F2 primary 0.087 0.844 0.264 0.130 0.402 74.8
+Discharge F1 0.135 0.499 0.754 0.209 0.391 27.5
+Discharge F2 primary 0.084 0.789 0.422 0.151 0.428 60.2
+For the discharge-time model, AUROC was similar for
+women (0.676) and men (0.677). Among race categories
+meeting the reporting threshold, AUROC ranged from
+0.618 (Other; n = 321 ) to 0.747 (Hispanic; n = 408 ).
+These small-category estimates have substantial sampling
+uncertainty and were not used for model or threshold
+selection. Complete subgroup output is provided as a
+machine-readable supplement.
+5 Discussion
+5.1 Principal findings
+Information accumulated during the encounter improved
+30-day readmission prediction over admission-time context
+and prior utilisation alone. The paired increase of approx-
+imately 0.046 in AUROC and 0.032 in AP was unlikely
+to be a bootstrap sampling artefact. The discharge-time
+model also reduced Brier score and retained a calibration
+slope close to one. Nevertheless, absolute performance
+remained moderate, with AP only about twice the event
+prevalence.
+The comparison clarifies two distinct tasks. Admission-
+time prediction may give teams more time to organise care
+but has less information. Discharge-time prediction can
+incorporate the course of the stay and final disposition,
+but offers a shorter intervention window. It is therefore
+misleading to rank these models without naming their
+prediction time. The present results quantify that trade-
+off on a common holdout rather than treating feature
+availability as an afterthought.
+The discharge AUROC of 0.677 is consistent with the
+0.667reportedforXGBoostbyEmi-JohnsonandNkrumah
+[4] and with the moderate performance of more extensive
+recent evaluations [5]. This convergence points to a ceiling
+imposed by the benchmark’s structured variables; algo-
+rithms alone cannot recover unrecorded social support, dis-
+ease trajectory, follow-up access, or post-discharge events.
+3
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=7154739
+Preprint not peer reviewed
+
+=== PAGE 4 ===
+Figure 1: Held-out ROC and precision–recall curves for the selected models. The dashed precision baseline equals test prevalence.
+Figure 2: Calibration by equal-frequency probability decile in
+the held-out patient-disjoint test set. The dashed line denotes
+ideal calibration.
+Figure 3: Selected-model held-out performance with 95%
+patient-cluster bootstrap intervals.
+T able 2: Development out-of-fold and held-out model performance. Asterisk marks the candidate selected within each feature
+set. AP, average precision.
+Features Model Dev AUROC Dev AP Test AUROC Test AP Brier Cal. slope
+Admission Logistic* 0.627 0.194 0.631 0.206 0.0988 0.913
+Admission Gradient boosting 0.625 0.190 0.633 0.206 0.0986 0.944
+Discharge Logistic 0.644 0.200 0.649 0.213 0.0982 0.908
+Discharge Gradient boosting* 0.665 0.220 0.677 0.237 0.0966 1.046
+4
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=7154739
+Preprint not peer reviewed
+
+=== PAGE 5 ===
+5.2 Operational interpretation
+Threshold selection exposes the cost of pursuing sensitivity
+in an imbalanced problem. The discharge F2 operating
+point detected 78.9% of positive encounters but flagged
+60.2% of all encounters and had PPV 15.1%. Such a
+threshold might support a very low-cost secondary review,
+not a scarce intensive intervention. Clinical usefulness
+depends on intervention benefit, capacity, harms, and cost;
+none were measured here. Decision-curve or prospective
+impact analysis would be needed before recommending a
+threshold.
+The probability estimates were reasonably calibrated
+internally, but calibration commonly shifts between insti-
+tutions and over time [9]. Any future use would require
+local recalibration, prospective monitoring, and prede-
+fined action pathways. Subgroup results should also be
+re-estimated with sufficiently large contemporary samples
+before any equity claim.
+5.3 Strengths and limitations
+Strengths include a protocol locked before the new hold-
+out was reviewed, exact source-data verification, patient-
+disjoint partitions, fold-local preprocessing, development-
+only threshold choice, paired cluster uncertainty, calibra-
+tion reporting, and complete code and machine-readable
+outputs. Testing two prespecified model families avoided
+a broad post-hoc search.
+Several limitations are decisive. First, the data are
+historical (1999–2008), and treatment, coding, discharge
+processes, and population composition have changed. Sec-
+ond, field-level timestamps are absent; availability sets
+are based on semantics and may not match every hospi-
+tal workflow. Third, the outcome does not distinguish
+planned from unplanned readmission, and readmissions
+outsidethecontributingdatanetworkmaynotbecaptured.
+Fourth, hospital and calendar identifiers are unavailable,
+preventing site-held-out or temporal validation. Fifth,
+structured fields omit social determinants, functional sta-
+tus, clinician judgement, and post-discharge access. Sixth,
+the test partition is internal to the same retrospective
+source; bootstrap intervals measure sampling uncertainty,
+not transportability. Finally, the subgroup analysis is
+descriptive and thin for several categories.
+6 Conclusion
+In this patient-disjoint study, information available by
+discharge yielded a clear but modest improvement over
+admission-time information for predicting a recorded read-
+mission within 30 days. The result supports explicit defi-
+nition of prediction time and shows that development-only
+threshold selection and calibration reporting materially
+change interpretation. The models are reproducible re-
+search benchmarks, not clinical devices. Contemporary
+temporal, external, and prospective validation is required
+before any patient-care use.
+Declarations
+Author contributions. Bhuvan Rajpoot conceived the
+study, wrote the protocol and software, conducted the
+analysis, interpreted the results, created the figures, and
+wrote and revised the manuscript.
+F unding.No external funding was received.
+Competing interests. The author declares no com-
+peting interests.
+Data and code availability . The data are available
+from the UCI Machine Learning Repository under CC
+BY 4.0 [1]. A reproducibility package has been prepared
+with the protocol, MIT-licensed code, exact environment
+record, tests, generated results, and build instructions. A
+permanent repository URL and DOI will be added in a
+revised version after archival deposit.
+Ethics. This secondary analysis used public, de-
+identified data and did not involve participant contact.
+No re-identification was attempted.
+Use of AI-assisted tools. An AI-assisted coding
+and editorial tool (OpenAI Codex) supported software
+scaffolding, language revision, and quality-control checks
+under the author’s direction. The author determined
+the research question and protocol, reviewed the code
+and outputs, verified all reported results against machine-
+readable artifacts, and accepts full responsibility for the
+manuscript. No AI system is an author.
+Licence. The manuscript is released under CC BY 4.0.
+Source data retain the UCI dataset licence; software is
+released under MIT.
+5
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=7154739
+Preprint not peer reviewed
+
+=== PAGE 6 ===
+References
+[1] John Clore, Krzysztof Cios, Jonathan DeShazo, and Beata
+Strack. Diabetes130-ushospitalsforyears1999–2008. UCI
+Machine Learning Repository, 2014.
+[2] Beata Strack, Jonathan P. DeShazo, Chris Gennings,
+Juan L. Olmo, Sebastian Ventura, Krzysztof J. Cios, and
+John N. Clore. Impact of HbA1c measurement on hospital
+readmission rates: Analysis of 70,000 clinical database pa-
+tientrecords. BioMed Research International, 2014:781670,
+2014.
+[3] Yujuan Shang, Kui Jiang, Lei Wang, Zheqing Zhang, Si-
+wei Zhou, Yun Liu, Jiancheng Dong, and Huiqun Wu. The
+30-days hospital readmission risk in diabetic patients: Pre-
+dictive modeling with machine learning classifiers.BMC
+Medical Informatics and Decision Making , 21(Suppl 2):57,
+2021.
+[4] Oluwabukola G. Emi-Johnson and Kwame J. Nkrumah.
+Predicting 30-day hospital readmission in patients with
+diabetesusingmachinelearningonelectronichealthrecord
+data. Cureus, 17(4):e82437, 2025.
+[5] SafaaSaadSalimandAbdullahiAbduIbrahim. Amachine
+learning approach for predicting 30-day hospital readmis-
+sion in patients with diabetes. Healthcare, 14(9):1185,
+2026.
+[6] Gary S. Collins, Karel G. M. Moons, Paula Dhiman,
+Richard D. Riley, Andrew L. Beam, Ben Van Calster,
+Marzyeh Ghassemi, Xiaoxuan Liu, Johannes B. Reitsma,
+Maarten van Smeden, et al. TRIPOD+AI statement:
+Updated guidance for reporting clinical prediction models
+that use regression or machine learning methods.BMJ,
+385:e078378, 2024.
+[7] Karel G. M. Moons, Johanna A. A. Damen, Tabea Kaul,
+Lotty Hooft, Constanza Andaur Navarro, Paula Dhiman,
+Andrew L. Beam, Ben Van Calster, Leo Anthony Celi,
+SpirosDenaxas, etal. PROBAST+AI:Anupdatedquality,
+riskofbias, andapplicabilityassessmenttoolforprediction
+models using regression or artificial intelligence methods.
+BMJ, 388:e082505, 2025.
+[8] Takaya Saito and Marc Rehmsmeier. The precision–recall
+plot is more informative than the ROC plot when eval-
+uating binary classifiers on imbalanced datasets.PLOS
+ONE, 10(3):e0118432, 2015.
+[9] Ben Van Calster, David J. McLernon, Maarten van Sme-
+den, Laure Wynants, and Ewout W. Steyerberg. Cali-
+bration: The achilles heel of predictive analytics.BMC
+Medicine, 17:230, 2019.
+[10] Fabian Pedregosa, Gaël Varoquaux, Alexandre Gramfort,
+Vincent Michel, Bertrand Thirion, Olivier Grisel, Mathieu
+Blondel, Peter Prettenhofer, Ron Weiss, Vincent Dubourg,
+Jake VanderPlas, Alexandre Passos, David Cournapeau,
+Matthieu Brucher, Matthieu Perrot, and Édouard Duch-
+esnay. Scikit-learn: Machine learning in python.Journal
+of Machine Learning Research, 12:2825–2830, 2011.
+6
+This preprint research paper has not been peer reviewed. Electronic copy available at: https://ssrn.com/abstract=7154739
+Preprint not peer reviewed

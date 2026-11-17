@@ -1,0 +1,111 @@
+{
+  "locked_utc": "2026-11-17T11:34:36.328076+00:00",
+  "selection": {
+    "admission": {
+      "model": "logistic",
+      "thresholds": {
+        "F1": 0.12038133966602844,
+        "F2": 0.08039001419314672
+      }
+    },
+    "discharge": {
+      "model": "hgb",
+      "thresholds": {
+        "F1": 0.13610612935712812,
+        "F2": 0.08310277928147373
+      }
+    }
+  },
+  "development_metrics": [
+    {
+      "features": "admission",
+      "model": "logistic",
+      "auroc": 0.624119128296515,
+      "ap": 0.19249981378625097,
+      "brier": 0.09803784095747312,
+      "log_loss": 0.34269409046811694,
+      "calibration_intercept": -0.10797463714502027,
+      "calibration_slope": 0.9454251627422167
+    },
+    {
+      "features": "admission",
+      "model": "hgb",
+      "auroc": 0.6229294053380716,
+      "ap": 0.18830942831350103,
+      "brier": 0.09811019488024239,
+      "log_loss": 0.3430939114993412,
+      "calibration_intercept": -0.26054645883919997,
+      "calibration_slope": 0.8650539368917713
+    },
+    {
+      "features": "discharge",
+      "model": "logistic",
+      "auroc": 0.6582305881804364,
+      "ap": 0.21065816786964298,
+      "brier": 0.09689760041121596,
+      "log_loss": 0.33715170761880675,
+      "calibration_intercept": -0.15334143343356935,
+      "calibration_slope": 0.9203715969629761
+    },
+    {
+      "features": "discharge",
+      "model": "hgb",
+      "auroc": 0.6661304435781421,
+      "ap": 0.22092619534139357,
+      "brier": 0.09615906817176396,
+      "log_loss": 0.3346357740992172,
+      "calibration_intercept": -0.006513888658910591,
+      "calibration_slope": 0.9931578560370635
+    }
+  ],
+  "config": {
+    "protocol_version": "independent-reproduction-1.0",
+    "split_seed": 2026,
+    "cv_seed": 2027,
+    "model_seed": 2026,
+    "bootstrap_seed": 2028,
+    "test_size": 0.2,
+    "cv_folds": 3,
+    "bootstrap_replicates": 500,
+    "subgroup_min_encounters": 200,
+    "logistic": {
+      "C": 1.0,
+      "solver": "lbfgs",
+      "max_iter": 1000,
+      "tol": 0.0001
+    },
+    "hgb": {
+      "max_iter": 200,
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 31,
+      "min_samples_leaf": 30,
+      "l2_regularization": 1.0,
+      "early_stopping": false,
+      "max_bins": 255
+    },
+    "diagnosis_mapping": "icd9_chapters",
+    "categorical_imputation": "most_frequent",
+    "ordinal_unknown_value": -1,
+    "native_categorical_splits": false,
+    "threshold_rule": "all_unique_oof_scores_greater_equal_lowest_threshold_on_tie",
+    "calibration": "joint_unpenalized_intercept_and_slope_on_logit",
+    "missing_values": [
+      "?"
+    ],
+    "notes": "Unreported implementation choices are explained in ASSUMPTIONS_AND_PAPER_ISSUES.md. No tuning against test results."
+  },
+  "oof_file_sha256": "0838682334e0fea1c9646d78208dbec8981046e2e0641cee23ddd6b643eca832",
+  "code_sha256": {
+    "configs/paper.json": "951769a57f1e142d510d0135daffc2c9096bce380bbdb6ce79b694c0dc883f81",
+    "reproduce.py": "5a3c62f3662ef215439e8c6f6173d717f026cf6d764b63c9c6d798d773e24e5a",
+    "requirements.txt": "cb270ffd4f4dc552a7d65ff6d27abf9720bf69132c1ee10aa1503d329652ffff",
+    "src/readmission/__init__.py": "8cfe17a9b821b279d938d9c00bbecf0989dc6c7eb1cecf672c52325bf6134862",
+    "src/readmission/data.py": "5c3767db5f5b311877e27c683f000168d1ef006553291f8d2830c4810ff92dcb",
+    "src/readmission/metrics.py": "6cb34b942395d3b9d5068cadeefe7914a21cb790228199e891a3dc64f1d6e9e9",
+    "src/readmission/models.py": "328da9c11933cb9a6949cc14c314772e36b38571479b47ee3357b9763d543976",
+    "src/readmission/reporting.py": "bbe65589af39b822660aa0e7cafeb3cd9d269683060a7e0189f5e789382940cb",
+    "src/readmission/run.py": "23e652e1c24d3a91514ce42900d7eb0f4ee0f3561bdea7de08c15254e66e3cbc",
+    "tests/test_reproduction.py": "72be665bdfb24efed16fc65e3c8196c9bed41ced4f91622a858670dfbadb0240"
+  },
+  "note": "Written after OOF selection and before fitting/evaluating test models. This is a reproduction lock, not the author's unavailable protocol."
+}

@@ -1,0 +1,27 @@
+{
+  "unit_tests": {
+    "status": "passed",
+    "count": 9,
+    "warning": "joblib physical-core detection fallback in the Windows VM"
+  },
+  "exported_artifact_audit": {
+    "status": "passed",
+    "command": "python scripts/verify_results.py",
+    "checks": [
+      "source and code hashes",
+      "patient boundaries",
+      "development-only selection and thresholds",
+      "saved-model test predictions",
+      "all reported probability and operating metrics",
+      "500 paired bootstrap differences and percentile intervals"
+    ]
+  },
+  "visual_review": {
+    "status": "passed",
+    "figures": [
+      "roc_pr.png",
+      "calibration.png",
+      "performance_intervals.png"
+    ]
+  }
+}

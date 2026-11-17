@@ -1,0 +1,12 @@
+.venv/
+.conda/
+__pycache__/
+.pytest_cache/
+*.pyc
+data/raw/*
+!data/raw/.gitkeep
+tmp/
+artifacts/
+results/smoke/
+results/**/models/
+*.egg-info/
