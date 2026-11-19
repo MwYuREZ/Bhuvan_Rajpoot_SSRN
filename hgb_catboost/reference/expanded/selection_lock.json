@@ -1,0 +1,38 @@
+{
+  "locked_utc": "2026-11-19T07:05:14.314894+00:00",
+  "hgb": {
+    "params": {
+      "learning_rate": 0.05,
+      "max_leaf_nodes": 31,
+      "min_samples_leaf": 30,
+      "l2_regularization": 1.0,
+      "max_bins": 255,
+      "early_stopping": false,
+      "categorical_features": "from_dtype"
+    },
+    "trees": 100,
+    "mean_validation_AP": 0.23164002181345586
+  },
+  "catboost": {
+    "params": {
+      "depth": 6,
+      "learning_rate": 0.035,
+      "l2_leaf_reg": 15
+    },
+    "trees": 439,
+    "validation_best_trees": [
+      715,
+      439,
+      290
+    ],
+    "mean_validation_AP": 0.23015286309036587
+  },
+  "blend_weights": {
+    "native_hgb": 0.5,
+    "catboost": 0.5
+  },
+  "final_training_seed": 2026,
+  "selection": "Highest mean AP across the saved development folds per family. CatBoost depth candidates use per-fold AP early stopping; the final tree count is the median for the selected candidate.",
+  "assignments_sha256": "2f75bc5e62d992c81d233339c37488321e8a35d260763b224e79d38078beaafe",
+  "development_trials_sha256": "297f0df433955066560886b94422e439fa26bdd6c2ac96d5210b15976b5ddee5"
+}

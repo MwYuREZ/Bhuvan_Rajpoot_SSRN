@@ -1,0 +1,39 @@
+{
+  "selected_utc": "2026-11-19T07:20:55.892882+00:00",
+  "depth": 6,
+  "trees": 750,
+  "dev_selected_model": "catboost",
+  "blend_catboost_weight": 0.5,
+  "primary_comparison": "blend minus hgb",
+  "thresholds": {
+    "hgb": {
+      "f1": 0.13610612935712812,
+      "f2": 0.08310277928147373
+    },
+    "catboost": {
+      "f1": 0.12984756299000974,
+      "f2": 0.08020952408245041
+    },
+    "blend": {
+      "f1": 0.1449257368145509,
+      "f2": 0.07937719703084004
+    }
+  },
+  "platt": {
+    "hgb": {
+      "intercept": -0.006513888658910591,
+      "slope": 0.9931578560370635
+    },
+    "catboost": {
+      "intercept": 0.1252212977266373,
+      "slope": 1.0591454133423102
+    },
+    "blend": {
+      "intercept": 0.16124443705092628,
+      "slope": 1.079001253870283
+    }
+  },
+  "assignments_sha256": "2f75bc5e62d992c81d233339c37488321e8a35d260763b224e79d38078beaafe",
+  "script_sha256": "da15bc64fc388b0d31341712191d38f7de94d1e9f11b27585fdb123899f241a3",
+  "development_trials_sha256": "43923a34b883563e2120debf9a3e597c568c5766b31e00cbe61fb3d46f23baf3"
+}
